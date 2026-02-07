@@ -1,0 +1,23 @@
+{
+  "credentials_match": true,
+  "api_client_init": true,
+  "test_results": [
+    {
+      "marketplace": "www.amazon.in",
+      "status": "FAILED",
+      "http_status": 403,
+      "reason": "Forbidden",
+      "error_body": {
+        "message": "Your account does not currently meet the eligibility requirements.",
+        "reason": "AssociateNotEligible",
+        "type": "AccessDeniedException"
+      }
+    }
+  ],
+  "error_details": {
+    "message": "Your account does not currently meet the eligibility requirements.",
+    "reason": "AssociateNotEligible",
+    "type": "AccessDeniedException"
+  },
+  "recommendations": []
+}

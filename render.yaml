@@ -1,0 +1,33 @@
+services:
+  # Main FastAPI web service
+  - type: web
+    name: ghostprice-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main_electronics:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    
+  # Daily price scraper cron job
+  - type: cron
+    name: ghostprice-daily-scraper
+    env: python
+    buildCommand: pip install -r requirements.txt
+    schedule: "0 2 * * *"  # Every day at 2:00 AM UTC
+    command: python daily_price_scraper.py
+    
+  # Weekly product discovery cron job
+  - type: cron
+    name: ghostprice-weekly-discovery
+    env: python
+    buildCommand: pip install -r requirements.txt
+    schedule: "0 1 * * 0"  # Every Sunday at 1:00 AM UTC
+    command: python discover_products.py
+
+databases:
+  # SQLite database (using disk storage)
+  - name: ghostprice-db
+    databaseName: lifecycle
+    plan: free

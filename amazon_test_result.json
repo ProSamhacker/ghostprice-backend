@@ -1,0 +1,15 @@
+{
+  "status": "API_ERROR",
+  "message": "Amazon API returned error: Forbidden",
+  "data": null,
+  "error": {
+    "status_code": 403,
+    "reason": "Forbidden",
+    "body": "{\"message\":\"Your account does not currently meet the eligibility requirements.\",\"reason\":\"AssociateNotEligible\",\"type\":\"AccessDeniedException\"}"
+  },
+  "config": {
+    "credential_id": "vdp2k685pg...****",
+    "partner_tag": "nocreditai-21",
+    "marketplace": "www.amazon.in"
+  }
+}

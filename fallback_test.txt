@@ -1,0 +1,13 @@
+﻿[INFO] API access pending approval, using database
+============================================================
+TESTING AMAZON CLIENT WITH FALLBACK
+============================================================
+
+Testing with 3 ASINs...
+ASINs: ['B0DLFMFBJW', 'B0DLMGH6T4', 'B0CYX5Q5YF']
+------------------------------------------------------------
+[INFO] Using database for 3 products
+
+[ERROR] No results returned
+
+============================================================

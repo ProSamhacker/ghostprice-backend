@@ -1,0 +1,46 @@
+﻿============================================================
+AMAZON CREATORS API TEST
+============================================================
+
+Credentials: vdp2k685pg...****
+Partner Tag: nocreditai-21
+Marketplace: www.amazon.in
+python : Traceback (most 
+recent call last):
+At line:1 char:13
++ cd backend; python 
+test_amazon_api.py 2>&1 | 
+Out-File -FilePath test_ ...
++             ~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecified: (Trace  
+  back (most recent call    
+ last)::String) [], Remo    
+teException
+    + FullyQualifiedErrorId 
+    : NativeCommandError
+ 
+  File "C:\Users\SAMIR\Deskt
+op\WEBSITE\ext\backend\test_
+amazon_api.py", line 36, in 
+<module>
+    print("\n\u2713 API 
+Client initialized")
+    ~~~~~^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^
+  File "C:\Users\SAMIR\AppDa
+ta\Local\Programs\Python\Pyt
+hon313\Lib\encodings\cp1252.
+py", line 19, in encode
+    return codecs.charmap_en
+code(input,self.errors,encod
+ing_table)[0]
+           ~~~~~~~~~~~~~~~~~
+~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^
+UnicodeEncodeError: 
+'charmap' codec can't 
+encode character '\u2713' 
+in position 2: character 
+maps to <undefined>

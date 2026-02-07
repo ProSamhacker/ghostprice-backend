@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GhostPrice Analysis - True Cost Comparison</title>
+    <link rel="stylesheet" href="/static/bridge.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="icon">💰</span>
+                <h1>GhostPrice</h1>
+            </div>
+            <p class="tagline">True Cost Analysis</p>
+        </header>
+
+        <!-- Main Comparison -->
+        <section class="comparison">
+            <h2 class="section-title">The Real Cost Comparison</h2>
+
+            <div class="product-grid">
+                <!-- The "Trap" Product -->
+                <div class="product-card trap">
+                    <div class="badge badge-trap">⚠️ Money Pit</div>
+                    <h3 class="product-name">{{ trap.product_name }}</h3>
+
+                    <div class="price-block">
+                        <div class="price-row">
+                            <span class="label">Purchase Price:</span>
+                            <span class="value">${{ "%.2f"|format(trap.sticker_price) }}</span>
+                        </div>
+                        <div class="price-row">
+                            <span class="label">Annual Maintenance:</span>
+                            <span class="value highlight">${{ "%.2f"|format(trap.annual_maintenance) }}</span>
+                        </div>
+                        <div class="price-row total">
+                            <span class="label">Year 1 Total:</span>
+                            <span class="value">${{ "%.2f"|format(trap.total_year_1) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="breakdown">
+                        <p><strong>Why it's expensive:</strong></p>
+                        <p>{{ trap.consumable_name }} costs ${{ "%.2f"|format(trap.consumable_price) }} and needs
+                            replacing every {{ trap.replacement_months }} months.</p>
+                    </div>
+
+                    <!-- Cost Bar Chart -->
+                    <div class="chart">
+                        <div class="bar bar-trap" style="--bar-height: {{ (trap.total_year_1 / max_cost * 100)|int }}%">
+                            <span class="bar-label">${{ "%.0f"|format(trap.total_year_1) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VS Divider -->
+                <div class="vs-divider">
+                    <span>VS</span>
+                </div>
+
+                <!-- The BIFL Alternative -->
+                <div class="product-card bifl">
+                    <div class="badge badge-bifl">✅ BIFL Choice</div>
+                    <h3 class="product-name">{{ bifl.product_name }}</h3>
+
+                    <div class="price-block">
+                        <div class="price-row">
+                            <span class="label">Purchase Price:</span>
+                            <span class="value">${{ "%.2f"|format(bifl.sticker_price) }}</span>
+                        </div>
+                        <div class="price-row">
+                            <span class="label">Annual Maintenance:</span>
+                            <span class="value highlight-green">${{ "%.2f"|format(bifl.annual_maintenance) }}</span>
+                        </div>
+                        <div class="price-row total">
+                            <span class="label">Year 1 Total:</span>
+                            <span class="value">${{ "%.2f"|format(bifl.total_year_1) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="breakdown">
+                        <p><strong>Why it's better:</strong></p>
+                        <p>{{ bifl.reasoning }}</p>
+                    </div>
+
+                    <!-- Cost Bar Chart -->
+                    <div class="chart">
+                        <div class="bar bar-bifl" style="--bar-height: {{ (bifl.total_year_1 / max_cost * 100)|int }}%">
+                            <span class="bar-label">${{ "%.0f"|format(bifl.total_year_1) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Savings Highlight -->
+        <section class="savings">
+            <div class="savings-card">
+                <h3>💡 Your Potential Savings</h3>
+                <div class="savings-amount">${{ "%.2f"|format(savings.year_1) }}</div>
+                <p>in the first year alone</p>
+
+                {% if savings.break_even_months %}
+                <div class="timeline">
+                    <p><strong>Break-even:</strong> By month {{ savings.break_even_months }}, the "expensive" option
+                        becomes cheaper than the "cheap" one.</p>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <h3>Ready to make the smart choice?</h3>
+            <div class="cta-buttons">
+                <a href="{{ bifl.amazon_link }}" class="btn btn-primary" target="_blank" rel="nofollow noopener">
+                    Buy {{ bifl.short_name }} on Amazon →
+                </a>
+                <a href="https://www.amazon.com/dp/{{ trap_asin }}" class="btn btn-secondary" target="_blank"
+                    rel="nofollow noopener">
+                    See Original Product
+                </a>
+            </div>
+            <p class="disclaimer">* As an Amazon Associate, GhostPrice earns from qualifying purchases.</p>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Powered by <strong>GhostPrice</strong> - Revealing the true cost of ownership</p>
+            <p class="small">Data last updated: {{ last_updated }}</p>
+        </footer>
+    </div>
+
+    <script src="/static/bridge.js"></script>
+</body>
+
+</html>
