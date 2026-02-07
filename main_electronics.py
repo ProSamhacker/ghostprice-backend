@@ -337,6 +337,95 @@ async def get_tracked_products(
         conn.close()
 
 
+@app.post("/admin/trigger-daily-scrape")
+async def trigger_daily_scrape():
+    """
+    Admin endpoint to trigger daily price scraping
+    Called by GitHub Actions cron job
+    """
+    import subprocess
+    import sys
+    
+    try:
+        # Run daily_price_scraper.py as a background process
+        script_path = os.path.join(os.path.dirname(__file__), "daily_price_scraper.py")
+        process = subprocess.Popen(
+            [sys.executable, script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        
+        return {
+            "status": "started",
+            "task": "daily_price_scrape",
+            "message": "Daily price scraping started in background",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start scraper: {str(e)}")
+
+
+@app.post("/admin/trigger-discovery")
+async def trigger_discovery():
+    """
+    Admin endpoint to trigger weekly product discovery
+    Called by GitHub Actions cron job
+    """
+    import subprocess
+    import sys
+    
+    try:
+        # Run discover_products.py as a background process
+        script_path = os.path.join(os.path.dirname(__file__), "discover_products.py")
+        process = subprocess.Popen(
+            [sys.executable, script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        
+        return {
+            "status": "started",
+            "task": "product_discovery",
+            "message": "Product discovery started in background",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start discovery: {str(e)}")
+
+
+@app.get("/admin/status")
+async def get_admin_status():
+    """Check system status and database stats"""
+    conn = get_db_connection()
+    
+    try:
+        # Get product count
+        product_count = conn.execute("SELECT COUNT(*) as count FROM tracked_products").fetchone()["count"]
+        
+        # Get price history count
+        price_count = conn.execute("SELECT COUNT(*) as count FROM price_history").fetchone()["count"]
+        
+        # Get category breakdown
+        categories = conn.execute("""
+            SELECT category, COUNT(*) as count 
+            FROM tracked_products 
+            GROUP BY category 
+            ORDER BY count DESC
+        """).fetchall()
+        
+        return {
+            "status": "healthy",
+            "database": {
+                "tracked_products": product_count,
+                "price_history_entries": price_count,
+                "categories": [dict(c) for c in categories]
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    finally:
+        conn.close()
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
