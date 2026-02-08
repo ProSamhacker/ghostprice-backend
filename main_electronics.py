@@ -395,11 +395,11 @@ async def get_admin_status():
     try:
         # Get product count
         result = conn.execute("SELECT COUNT(*) as count FROM tracked_products").fetchone()
-        product_count = result[0] if USE_POSTGRES else result[0]
+        product_count = result['count'] if USE_POSTGRES else result[0]
         
         # Get price history count
         result = conn.execute("SELECT COUNT(*) as count FROM price_history").fetchone()
-        price_count = result[0] if USE_POSTGRES else result[0]
+        price_count = result['count'] if USE_POSTGRES else result[0]
         
         # Get category breakdown
         categories = conn.execute("""
