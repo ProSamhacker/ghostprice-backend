@@ -230,7 +230,7 @@ class ProductDiscoveryBot:
         
         try:
             # Check if exists
-            cursor.execute("SELECT asin FROM tracked_products WHERE asin = ?", (asin,))
+            cursor.execute("SELECT asin FROM tracked_products WHERE asin = %s", (asin,))
             if cursor.fetchone():
                 return False  # Already exists
             
@@ -238,7 +238,7 @@ class ProductDiscoveryBot:
             cursor.execute("""
                 INSERT INTO tracked_products 
                 (asin, product_title, category, marketplace, currency, first_seen_at, last_updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (asin, title, category, 'IN', 'INR', datetime.now(), datetime.now()))
             
             conn.commit()
