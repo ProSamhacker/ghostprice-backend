@@ -348,12 +348,9 @@ async def trigger_daily_scrape():
     
     try:
         # Run daily_price_scraper.py as a background process
+        # Removed stdout/stderr PIPE so logs appear in Render dashboard
         script_path = os.path.join(os.path.dirname(__file__), "daily_price_scraper.py")
-        process = subprocess.Popen(
-            [sys.executable, script_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        process = subprocess.Popen([sys.executable, script_path])
         
         return {
             "status": "started",
@@ -376,12 +373,9 @@ async def trigger_discovery():
     
     try:
         # Run discover_products.py as a background process
+        # Removed stdout/stderr PIPE so logs appear in Render dashboard
         script_path = os.path.join(os.path.dirname(__file__), "discover_products.py")
-        process = subprocess.Popen(
-            [sys.executable, script_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        process = subprocess.Popen([sys.executable, script_path])
         
         return {
             "status": "started",
