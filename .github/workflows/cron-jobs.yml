@@ -1,0 +1,19 @@
+name: GhostPrice Automation
+
+on:
+  schedule:
+    - cron: '0 2 * * *'      # Daily at 2 AM UTC
+    - cron: '0 1 * * 0'      # Sunday at 1 AM UTC
+
+jobs:
+  daily-scraper:
+    if: github.event.schedule == '0 2 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -X POST https://ghostprice-backend.onrender.com/admin/trigger-daily-scrape
+
+  weekly-discovery:
+    if: github.event.schedule == '0 1 * * 0'
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -X POST https://ghostprice-backend.onrender.com/admin/trigger-discovery
