@@ -4,11 +4,15 @@ Scrapes prices for all tracked electronics products daily
 Populates price_history automatically without needing users
 """
 
+import sys
 import sqlite3
 import time
 from datetime import datetime
 from amazon_scraper import AmazonScraperClient
 import os
+
+# Force unbuffered output for Render logs
+sys.stdout.reconfigure(line_buffering=True)
 
 # Database path
 DB_PATH = os.path.join(os.path.dirname(__file__), 'lifecycle.db')
