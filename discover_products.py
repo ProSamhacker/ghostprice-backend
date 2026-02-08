@@ -16,12 +16,36 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import random
-import sqlite3
 from datetime import datetime
 from electronics_categories import detect_category
 import os
+from dotenv import load_dotenv
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'lifecycle.db')
+# Load environment variables
+load_dotenv()
+
+# Database configuration - Use PostgreSQL if available, otherwise SQLite
+DATABASE_URL = os.getenv("DATABASE_URL")
+USE_POSTGRES = DATABASE_URL is not None and DATABASE_URL.startswith("postgres")
+
+if USE_POSTGRES:
+    import psycopg
+    from psycopg.rows import dict_row
+    print(f"✅ Using PostgreSQL database")
+else:
+    import sqlite3
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'lifecycle.db')
+    print(f"✅ Using SQLite database at {DB_PATH}")
+
+def get_db_connection():
+    """Create database connection (PostgreSQL or SQLite)"""
+    if USE_POSTGRES:
+        conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
+        return conn
+    else:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        return conn
 
 # Multiple Amazon discovery sources for broader coverage
 DISCOVERY_SOURCES = {
@@ -201,7 +225,7 @@ class ProductDiscoveryBot:
     
     def add_to_database(self, asin, title, category):
         """Add product to tracked_products if not exists"""
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         try:
