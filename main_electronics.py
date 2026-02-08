@@ -400,10 +400,12 @@ async def get_admin_status():
     
     try:
         # Get product count
-        product_count = conn.execute("SELECT COUNT(*) as count FROM tracked_products").fetchone()["count"]
+        result = conn.execute("SELECT COUNT(*) as count FROM tracked_products").fetchone()
+        product_count = result[0] if USE_POSTGRES else result[0]
         
         # Get price history count
-        price_count = conn.execute("SELECT COUNT(*) as count FROM price_history").fetchone()["count"]
+        result = conn.execute("SELECT COUNT(*) as count FROM price_history").fetchone()
+        price_count = result[0] if USE_POSTGRES else result[0]
         
         # Get category breakdown
         categories = conn.execute("""
@@ -413,12 +415,20 @@ async def get_admin_status():
             ORDER BY count DESC
         """).fetchall()
         
+        # Convert to list of dicts
+        category_list = []
+        for cat in categories:
+            if USE_POSTGRES:
+                category_list.append(dict(cat))
+            else:
+                category_list.append({"category": cat[0], "count": cat[1]})
+        
         return {
             "status": "healthy",
             "database": {
                 "tracked_products": product_count,
                 "price_history_entries": price_count,
-                "categories": [dict(c) for c in categories]
+                "categories": category_list
             },
             "timestamp": datetime.now().isoformat()
         }
