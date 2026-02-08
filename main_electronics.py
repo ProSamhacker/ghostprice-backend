@@ -433,3 +433,92 @@ async def get_admin_status():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+@app.post("/admin/init-database")
+async def init_database():
+    """
+    Initialize database schema (PostgreSQL or SQLite)
+    Creates all required tables if they don't exist
+    """
+    try:
+        conn = get_db_connection()
+        
+        if USE_POSTGRES:
+            # PostgreSQL schema
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS tracked_products (
+                    asin TEXT PRIMARY KEY,
+                    product_title TEXT NOT NULL,
+                    category TEXT,
+                    marketplace TEXT DEFAULT 'IN',
+                    currency TEXT DEFAULT 'INR',
+                    first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS price_history (
+                    id SERIAL PRIMARY KEY,
+                    asin TEXT NOT NULL,
+                    price REAL NOT NULL,
+                    currency TEXT DEFAULT 'INR',
+                    marketplace TEXT DEFAULT 'IN',
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    source TEXT DEFAULT 'extension',
+                    FOREIGN KEY (asin) REFERENCES tracked_products(asin)
+                )
+            """)
+            
+            # Create indexes
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_price_asin ON price_history(asin)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_price_timestamp ON price_history(timestamp)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_tracked_category ON tracked_products(category)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_tracked_marketplace ON tracked_products(marketplace)")
+            
+            conn.commit()
+        else:
+            # SQLite schema
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS tracked_products (
+                    asin TEXT PRIMARY KEY,
+                    product_title TEXT NOT NULL,
+                    category TEXT,
+                    marketplace TEXT DEFAULT 'IN',
+                    currency TEXT DEFAULT 'INR',
+                    first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS price_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    asin TEXT NOT NULL,
+                    price REAL NOT NULL,
+                    currency TEXT DEFAULT 'INR',
+                    marketplace TEXT DEFAULT 'IN',
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    source TEXT DEFAULT 'extension',
+                    FOREIGN KEY (asin) REFERENCES tracked_products(asin)
+                )
+            """)
+            
+            # Create indexes
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_price_asin ON price_history(asin)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_price_timestamp ON price_history(timestamp)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_tracked_category ON tracked_products(category)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_tracked_marketplace ON tracked_products(marketplace)")
+            
+            conn.commit()
+        
+        conn.close()
+        
+        return {
+            "status": "success",
+            "message": "Database schema initialized successfully",
+            "database_type": "PostgreSQL" if USE_POSTGRES else "SQLite"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database initialization failed: {str(e)}")
