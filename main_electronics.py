@@ -48,7 +48,7 @@ else:
 def get_db_connection():
     """Create database connection (PostgreSQL or SQLite)"""
     if USE_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
         return conn
     else:
         conn = sqlite3.connect(DB_PATH)
