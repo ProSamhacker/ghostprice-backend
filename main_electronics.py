@@ -36,8 +36,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 USE_POSTGRES = DATABASE_URL is not None and DATABASE_URL.startswith("postgres")
 
 if USE_POSTGRES:
-    import psycopg2
-    from psycopg2.extras import RealDictCursor
+    import psycopg
+    from psycopg.rows import dict_row
     print(f"✅ Using PostgreSQL database")
 else:
     import sqlite3
