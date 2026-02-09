@@ -85,7 +85,11 @@ def scrape_all_tracked_products():
     success_count = 0
     error_count = 0
     
-    for i, (asin, title, marketplace, currency) in enumerate(products, 1):
+    for i, product in enumerate(products, 1):
+        asin = product['asin']
+        title = product['product_title']
+        marketplace = product['marketplace']
+        currency = product['currency']
         print(f"[{i}/{len(products)}] Scraping: {title[:50]}...")
         print(f"           ASIN: {asin} | Market: {marketplace}")
         
