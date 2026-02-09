@@ -1,0 +1,15 @@
+name: Weekly Product Discovery
+
+on:
+  schedule:
+    # Run at 1:00 UTC on Sundays (6:30 AM IST)
+    - cron: '0 1 * * 0'
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  discover-products:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Product Discovery
+        run: curl -X POST https://ghostprice-backend.onrender.com/admin/trigger-discovery
+        timeout-minutes: 45

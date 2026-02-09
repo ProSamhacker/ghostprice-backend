@@ -24,28 +24,20 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Database configuration - Use PostgreSQL if available, otherwise SQLite
+# PostgreSQL database configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
-USE_POSTGRES = DATABASE_URL is not None and DATABASE_URL.startswith("postgres")
+if not DATABASE_URL:
+    # Fallback for local testing if .env not loaded, but ideally should just fail if strict
+    print("⚠️ WARNING: DATABASE_URL not found. Ensure .env is set.")
 
-if USE_POSTGRES:
-    import psycopg
-    from psycopg.rows import dict_row
-    print(f"✅ Using PostgreSQL database")
-else:
-    import sqlite3
-    DB_PATH = os.path.join(os.path.dirname(__file__), 'lifecycle.db')
-    print(f"✅ Using SQLite database at {DB_PATH}")
+import psycopg
+from psycopg.rows import dict_row
+
+print(f"✅ Using PostgreSQL database")
 
 def get_db_connection():
-    """Create database connection (PostgreSQL or SQLite)"""
-    if USE_POSTGRES:
-        conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
-        return conn
-    else:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        return conn
+    """Create PostgreSQL database connection"""
+    return psycopg.connect(DATABASE_URL, row_factory=dict_row)
 
 # Multiple Amazon discovery sources for broader coverage
 DISCOVERY_SOURCES = {

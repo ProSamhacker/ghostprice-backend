@@ -31,29 +31,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Database configuration
+# PostgreSQL database configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
-USE_POSTGRES = DATABASE_URL is not None and DATABASE_URL.startswith("postgres")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is required. Please set it in your .env file or environment.")
 
-if USE_POSTGRES:
-    import psycopg
-    from psycopg.rows import dict_row
-    print(f"✅ Using PostgreSQL database")
-else:
-    import sqlite3
-    DB_PATH = os.path.join(os.path.dirname(__file__), "lifecycle.db")
-    print(f"✅ Using SQLite database at {DB_PATH}")
+import psycopg
+from psycopg.rows import dict_row
+
+print(f"✅ Using PostgreSQL database")
 
 
 def get_db_connection():
-    """Create database connection (PostgreSQL or SQLite)"""
-    if USE_POSTGRES:
-        conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
-        return conn
-    else:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        return conn
+    """Create PostgreSQL database connection"""
+    return psycopg.connect(DATABASE_URL, row_factory=dict_row)
 
 
 @app.get("/")
@@ -395,11 +386,11 @@ async def get_admin_status():
     try:
         # Get product count
         result = conn.execute("SELECT COUNT(*) as count FROM tracked_products").fetchone()
-        product_count = result['count'] if USE_POSTGRES else result[0]
+        product_count = result['count']
         
         # Get price history count
         result = conn.execute("SELECT COUNT(*) as count FROM price_history").fetchone()
-        price_count = result['count'] if USE_POSTGRES else result[0]
+        price_count = result['count']
         
         # Get category breakdown
         categories = conn.execute("""
@@ -410,12 +401,7 @@ async def get_admin_status():
         """).fetchall()
         
         # Convert to list of dicts
-        category_list = []
-        for cat in categories:
-            if USE_POSTGRES:
-                category_list.append(dict(cat))
-            else:
-                category_list.append({"category": cat[0], "count": cat[1]})
+        category_list = [dict(cat) for cat in categories]
         
         return {
             "status": "healthy",
@@ -437,88 +423,51 @@ if __name__ == "__main__":
 @app.post("/admin/init-database")
 async def init_database():
     """
-    Initialize database schema (PostgreSQL or SQLite)
+    Initialize PostgreSQL database schema
     Creates all required tables if they don't exist
     """
     try:
         conn = get_db_connection()
         
-        if USE_POSTGRES:
-            # PostgreSQL schema
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS tracked_products (
-                    asin TEXT PRIMARY KEY,
-                    product_title TEXT NOT NULL,
-                    category TEXT,
-                    marketplace TEXT DEFAULT 'IN',
-                    currency TEXT DEFAULT 'INR',
-                    first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    last_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS price_history (
-                    id SERIAL PRIMARY KEY,
-                    asin TEXT NOT NULL,
-                    price REAL NOT NULL,
-                    currency TEXT DEFAULT 'INR',
-                    marketplace TEXT DEFAULT 'IN',
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    source TEXT DEFAULT 'extension',
-                    FOREIGN KEY (asin) REFERENCES tracked_products(asin)
-                )
-            """)
-            
-            # Create indexes
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_price_asin ON price_history(asin)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_price_timestamp ON price_history(timestamp)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_tracked_category ON tracked_products(category)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_tracked_marketplace ON tracked_products(marketplace)")
-            
-            conn.commit()
-        else:
-            # SQLite schema
-            cursor = conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS tracked_products (
-                    asin TEXT PRIMARY KEY,
-                    product_title TEXT NOT NULL,
-                    category TEXT,
-                    marketplace TEXT DEFAULT 'IN',
-                    currency TEXT DEFAULT 'INR',
-                    first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    last_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS price_history (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    asin TEXT NOT NULL,
-                    price REAL NOT NULL,
-                    currency TEXT DEFAULT 'INR',
-                    marketplace TEXT DEFAULT 'IN',
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    source TEXT DEFAULT 'extension',
-                    FOREIGN KEY (asin) REFERENCES tracked_products(asin)
-                )
-            """)
-            
-            # Create indexes
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_price_asin ON price_history(asin)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_price_timestamp ON price_history(timestamp)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_tracked_category ON tracked_products(category)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_tracked_marketplace ON tracked_products(marketplace)")
-            
-            conn.commit()
+        # PostgreSQL schema
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tracked_products (
+                asin TEXT PRIMARY KEY,
+                product_title TEXT NOT NULL,
+                category TEXT,
+                marketplace TEXT DEFAULT 'IN',
+                currency TEXT DEFAULT 'INR',
+                first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
         
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS price_history (
+                id SERIAL PRIMARY KEY,
+                asin TEXT NOT NULL,
+                price REAL NOT NULL,
+                currency TEXT DEFAULT 'INR',
+                marketplace TEXT DEFAULT 'IN',
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                source TEXT DEFAULT 'extension',
+                FOREIGN KEY (asin) REFERENCES tracked_products(asin)
+            )
+        """)
+        
+        # Create indexes
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_price_asin ON price_history(asin)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_price_timestamp ON price_history(timestamp)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_tracked_category ON tracked_products(category)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_tracked_marketplace ON tracked_products(marketplace)")
+        
+        conn.commit()
         conn.close()
         
         return {
             "status": "success",
             "message": "Database schema initialized successfully",
-            "database_type": "PostgreSQL" if USE_POSTGRES else "SQLite"
+            "database_type": "PostgreSQL"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database initialization failed: {str(e)}")

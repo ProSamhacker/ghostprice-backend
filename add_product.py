@@ -8,13 +8,21 @@ Usage:
 """
 
 import sys
-import sqlite3
 from datetime import datetime
 from electronics_categories import detect_category
 from amazon_scraper import AmazonScraperClient
 import os
+from dotenv import load_dotenv
+import psycopg
+from psycopg.rows import dict_row
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'lifecycle.db')
+# Load environment variables
+load_dotenv()
+
+# PostgreSQL database configuration
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    print("⚠️ WARNING: DATABASE_URL not found. Ensure .env is set.")
 
 def add_product(asin, title=None, marketplace='IN', currency='INR'):
     """Add a product to tracked_products"""
@@ -41,25 +49,25 @@ def add_product(asin, title=None, marketplace='IN', currency='INR'):
         print(f"   Will add anyway, but it won't be tracked by the extension")
     
     # Add to database
-    conn = sqlite3.connect(DB_PATH)
+    conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
     cursor = conn.cursor()
     
     try:
         # Check if exists
-        cursor.execute("SELECT asin, product_title FROM tracked_products WHERE asin = ?", (asin,))
+        cursor.execute("SELECT asin, product_title FROM tracked_products WHERE asin = %s", (asin,))
         existing = cursor.fetchone()
         
         if existing:
             print(f"⚠️  Product already exists:")
-            print(f"   ASIN: {existing[0]}")
-            print(f"   Title: {existing[1][:60]}")
+            print(f"   ASIN: {existing['asin']}")
+            print(f"   Title: {existing['product_title'][:60]}")
             return False
         
         # Insert
         cursor.execute("""
             INSERT INTO tracked_products 
             (asin, product_title, category, marketplace, currency, first_seen_at, last_updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (asin, title, category, marketplace, currency, datetime.now(), datetime.now()))
         
         conn.commit()

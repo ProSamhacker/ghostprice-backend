@@ -5,53 +5,65 @@ Populates price_history automatically without needing users
 """
 
 import sys
-import sqlite3
 import time
 from datetime import datetime
 from amazon_scraper import AmazonScraperClient
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Force unbuffered output for Render logs
 sys.stdout.reconfigure(line_buffering=True)
 
-# Database path
-DB_PATH = os.path.join(os.path.dirname(__file__), 'lifecycle.db')
+# PostgreSQL database configuration
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    print("⚠️ WARNING: DATABASE_URL not found. Ensure .env is set.")
+
+import psycopg
+from psycopg.rows import dict_row
+
+def get_db_connection():
+    """Create PostgreSQL database connection"""
+    return psycopg.connect(DATABASE_URL, row_factory=dict_row)
 
 def get_tracked_products():
     """Get all tracked products from database"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    conn = get_db_connection()
     
-    cursor.execute("""
-        SELECT asin, product_title, marketplace, currency
-        FROM tracked_products
-        ORDER BY last_updated_at ASC
-    """)
-    
-    products = cursor.fetchall()
-    conn.close()
-    
-    return products
+    try:
+        # Use simple list for fetching results to avoid cursor issues
+        result = conn.execute("""
+            SELECT asin, product_title, marketplace, currency
+            FROM tracked_products
+            ORDER BY last_updated_at ASC
+        """).fetchall()
+        return result
+    finally:
+        conn.close()
 
 def record_price(asin, price, currency, marketplace, source='scraper'):
     """Record price in price_history table"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    conn = get_db_connection()
     
-    cursor.execute("""
-        INSERT INTO price_history (asin, price, currency, marketplace, timestamp, source)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (asin, price, currency, marketplace, datetime.now(), source))
-    
-    # Update last_updated_at in tracked_products
-    cursor.execute("""
-        UPDATE tracked_products
-        SET last_updated_at = ?
-        WHERE asin = ?
-    """, (datetime.now(), asin))
-    
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute("""
+            INSERT INTO price_history (asin, price, currency, marketplace, timestamp, source)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (asin, price, currency, marketplace, datetime.now(), source))
+        
+        # Update last_updated_at in tracked_products
+        conn.execute("""
+            UPDATE tracked_products
+            SET last_updated_at = %s
+            WHERE asin = %s
+        """, (datetime.now(), asin))
+        
+        conn.commit()
+    finally:
+        conn.close()
 
 def scrape_all_tracked_products():
     """Scrape prices for all tracked products"""
