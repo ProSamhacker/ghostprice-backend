@@ -1,0 +1,32 @@
+name: Weekly Product Discovery
+
+on:
+  schedule:
+    # Runs at 1:00 AM UTC every Sunday
+    - cron: '0 1 * * 0'
+  workflow_dispatch:  # Allows manual run button
+
+jobs:
+  discover-products:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          
+      - name: Run Discovery Script
+        run: |
+          cd backend
+          # This script finds new products and adds them to the DB
+          python discover_products.py
