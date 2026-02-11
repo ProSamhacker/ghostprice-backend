@@ -1,0 +1,37 @@
+name: Direct Price Scraper
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Runs at 2:00 AM UTC every day
+  workflow_dispatch:      # Adds a "Run Now" button for manual testing
+
+jobs:
+  scrape-prices:
+    runs-on: ubuntu-latest
+    
+    # We inject the secret we created earlier into the environment
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # Note: We do NOT need PUBLIC_URL here because we aren't pinging the website
+      
+    steps:
+      # Step 1: Download your code
+      - uses: actions/checkout@v3
+      
+      # Step 2: Install Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      # Step 3: Install libraries (psycopg, requests, beautifulsoup4, etc.)
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          
+      # Step 4: Run the scraper script
+      - name: Run Scraper Directly
+        run: |
+          cd backend
+          python daily_price_scraper.py
