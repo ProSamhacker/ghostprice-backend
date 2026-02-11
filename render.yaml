@@ -9,25 +9,15 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
-    
-  # Daily price scraper cron job
-  - type: cron
-    name: ghostprice-daily-scraper
-    env: python
-    buildCommand: pip install -r requirements.txt
-    schedule: "0 2 * * *"  # Every day at 2:00 AM UTC
-    command: python daily_price_scraper.py
-    
-  # Weekly product discovery cron job
-  - type: cron
-    name: ghostprice-weekly-discovery
-    env: python
-    buildCommand: pip install -r requirements.txt
-    schedule: "0 1 * * 0"  # Every Sunday at 1:00 AM UTC
-    command: python discover_products.py
+      # Automatically links the database below to your app
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ghostprice-db
+          property: connectionString
 
 databases:
-  # SQLite database (using disk storage)
+  # PostgreSQL Database (Required for persistent data)
   - name: ghostprice-db
-    databaseName: lifecycle
-    plan: free
+    databaseName: lifecycle_db
+    user: ghostprice_user
+    plan: free # Uses Render's free tier for Postgres
