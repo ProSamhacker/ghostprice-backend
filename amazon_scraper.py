@@ -97,33 +97,47 @@ class AmazonScraperClient:
     def _extract_price(self, soup: BeautifulSoup) -> Optional[float]:
         """Extract price from Amazon page using multiple selectors"""
         
+        # Check for Captcha
+        if "captcha" in soup.text.lower() or soup.find('form', action=lambda x: x and 'captcha' in x):
+            print(f"⚠️  Amazon Captcha detected")
+            return None
+
         # Try different price selectors (Amazon changes them frequently)
         price_selectors = [
-            # Deal price
+            # Standard modern price (e.g. "₹1,299")
             {'name': 'span', 'attrs': {'class': 'a-price-whole'}},
-            # Regular price
+            # Price inside the apex price box
+            {'name': 'span', 'attrs': {'class': 'a-offscreen'}},
+            # Deal block
+            {'name': 'div', 'attrs': {'id': 'corePriceDisplay_desktop_feature_div'}},
+            {'name': 'div', 'attrs': {'id': 'corePrice_feature_div'}},
+            # Legacy selectors
             {'name': 'span', 'attrs': {'id': 'priceblock_ourprice'}},
             {'name': 'span', 'attrs': {'id': 'priceblock_dealprice'}},
-            # Sale price
             {'name': 'span', 'attrs': {'id': 'priceblock_saleprice'}},
-            # New style
-            {'name': 'span', 'attrs': {'class': 'a-offscreen'}},
         ]
         
         for selector in price_selectors:
             try:
-                element = soup.find(selector['name'], selector['attrs'])
-                if element:
-                    # Clean price text
+                elements = soup.find_all(selector['name'], selector['attrs'])
+                for element in elements:
+                    if not element: continue
+                    
+                    # Get text
                     price_text = element.get_text().strip()
-                    # Remove currency symbols and commas
-                    price_text = price_text.replace('₹', '').replace(',', '').replace('$', '')
                     
-                    # Convert to float
-                    price = float(price_text.split()[0])  # Get first number
+                    # Cleanup: remove "₹", ",", "$", "MRP:", "Deal of the Day"
+                    # We look for the first valid number
+                    import re
+                    match = re.search(r'[\d,]+(\.\d+)?', price_text)
                     
-                    if price > 0:
-                        return price
+                    if match:
+                        clean_price = match.group(0).replace(',', '')
+                        price = float(clean_price)
+                        
+                        # Sanity check: Price shouldn't be tiny or massive (unless it's a book/ebook)
+                        if 10 < price < 1000000:
+                            return price
             except:
                 continue
         
