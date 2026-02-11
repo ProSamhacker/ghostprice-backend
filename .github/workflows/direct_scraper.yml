@@ -27,11 +27,9 @@ jobs:
       # Step 3: Install libraries (psycopg, requests, beautifulsoup4, etc.)
       - name: Install dependencies
         run: |
-          cd backend
           pip install -r requirements.txt
           
       # Step 4: Run the scraper script
       - name: Run Scraper Directly
         run: |
-          cd backend
           python daily_price_scraper.py
