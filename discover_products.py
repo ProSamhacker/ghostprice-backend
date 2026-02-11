@@ -65,22 +65,22 @@ DISCOVERY_SOURCES = {
 
 # Search queries for broader electronics discovery
 SEARCH_QUERIES = [
-    'laptop',
-    'gaming laptop',
-    'smartphone',
-    '5g phone',
-    'wireless headphones',
-    'bluetooth speaker',
-    'gaming monitor',
-    'mechanical keyboard',
-    'wireless mouse',
-    'tablet',
-    'smartwatch',
-    'camera',
-    'ssd',
-    'external hard drive',
-    'power bank',
-    'router',
+    # Laptops & Computers
+    'laptop i5', 'laptop i7', 'gaming laptop rtx', 'macbook air',
+    'monitor 27 inch', 'gaming monitor 144hz', '4k monitor',
+    'mechanical keyboard', 'wireless mouse', 'external ssd 1tb',
+    
+    # Mobile & Tablets
+    'smartphone 5g', 'samsung phone', 'oneplus phone', 'iphone 15',
+    'ipad', 'android tablet', 'power bank 20000mah',
+    
+    # Audio
+    'wireless headphones noise cancelling', 'sony headphones', 'jbl speakers',
+    'soundbar for tv', 'bluetooth speaker', 'tws earbuds',
+    
+    # Cameras & Others
+    'dslr camera', 'action camera', 'security camera wifi',
+    'smartwatch for men', 'smartwatch for women', 'wifi 6 router'
 ]
 
 class ProductDiscoveryBot:
@@ -182,10 +182,10 @@ class ProductDiscoveryBot:
             pass
         return None
     
-    def scrape_search_results(self, query, max_products=30):
+    def scrape_search_results(self, query, page=1, max_products=30):
         """Scrape ASINs from Amazon search results"""
         try:
-            search_url = f"https://www.amazon.in/s?k={query.replace(' ', '+')}"
+            search_url = f"https://www.amazon.in/s?k={query.replace(' ', '+')}&page={page}"
             
             headers = {
                 'User-Agent': random.choice(self.user_agents),
@@ -264,10 +264,18 @@ def discover_products(max_per_source=20, max_total=500, include_search=True):
     
     bot = ProductDiscoveryBot()
     
+    # Pre-load existing ASINs to avoid duplicates
+    print("⏳ Loading existing products from database...")
+    conn = get_db_connection()
+    existing = conn.execute("SELECT asin FROM tracked_products").fetchall()
+    conn.close()
+    
+    discovered_asins = set(row['asin'] for row in existing)
+    print(f"✅ Loaded {len(discovered_asins)} existing products. Will skip these.")
+    
     total_discovered = 0
     total_added = 0
     total_skipped = 0
-    discovered_asins = set()  # Track ASINs to avoid processing duplicates
     
     # Phase 1: Scrape from curated lists (Best Sellers, New Releases, Trending)
     print("📋 PHASE 1: Curated Lists (Best Sellers, New Releases, Trending)")
@@ -352,10 +360,12 @@ def discover_products(max_per_source=20, max_total=500, include_search=True):
             if total_discovered >= max_total:
                 break
             
-            print(f"\n🔍 Searching: '{query}'")
+            # Randomize page to find new products (deep search)
+            page = random.randint(1, 4)
+            print(f"\n🔍 Searching: '{query}' (Page {page})")
             
             # Scrape search results
-            asins = bot.scrape_search_results(query, max_products=15)
+            asins = bot.scrape_search_results(query, page=page, max_products=15)
             
             if not asins:
                 print(f"⚠️  No results")
