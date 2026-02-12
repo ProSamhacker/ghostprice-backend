@@ -3,7 +3,7 @@ name: Weekly Product Discovery
 on:
   schedule:
     # Runs at 1:00 AM UTC every Sunday
-    - cron: '0 1 * * 0'
+    - cron: '0 1 * * *'
   workflow_dispatch:  # Allows manual run button
 
 jobs:
